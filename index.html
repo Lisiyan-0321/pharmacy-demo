@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Pharmacy FAQ Demo</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; color: #333; }
+        h1 { color: #1a5f7a; }
+        .notice { background: #f0f7fa; border-left: 4px solid #1a5f7a; padding: 15px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>Community Pharmacy FAQ Assistant</h1>
+    <p>This is an interactive demo of a <strong>non-clinical</strong> administrative FAQ chatbot for a community pharmacy.</p>
+    <div class="notice">
+        <strong>Important:</strong> This demo only handles administrative questions (hours, prescriptions, insurance, parking). It <strong>cannot</strong> provide medical advice, symptom checks, or medication recommendations.
+    </div>
+    <p>Click the chat bubble in the bottom-right corner to start.</p>
+
+    <script 
+        src="https://cdn.jsdelivr.net/npm/ai-support-widget/dist/index.iife.js" 
+        data-api-key="e44fecc53b62477dbfc90af9ffc42e05.7dS8abhR9Do7GoKk" 
+        data-base-url="https://api.z.ai/api/paas/v4/"
+        data-title="Pharmacy FAQ"
+        data-welcome="Hello! I can answer administrative questions about our pharmacy. How can I help?"
+        data-system-prompt="You are an administrative FAQ assistant for a community pharmacy. You must ONLY answer questions about opening hours, prescription drop-off/collection processes, insurance basics (co-payment), parking, and delivery. You must REFUSE to answer any clinical questions, including questions about symptoms, medication safety, side effects, or what medication to take. When asked a clinical question, respond with: 'I cannot provide medical advice. Please consult our pharmacist or a doctor.' Keep all answers brief and factual."
+    ></script>
+</body>
+</html>
