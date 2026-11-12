@@ -4,9 +4,11 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
-const REQUEST_TIMEOUT_MS = 20_000;
+const REQUEST_TIMEOUT_MS = 45_000;
 const RETRY_DELAY_MS = 1_000;
-const MAX_ATTEMPTS = 3;
+const MAX_ATTEMPTS = 2;
+const BUSY_ERROR =
+  "The free-tier AI model is currently busy. Please wait a few seconds and try again.";
 
 function delay(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -76,15 +78,16 @@ export async function onRequestPost(context) {
         signal: controller.signal,
       });
     } catch {
+      if (controller.signal.aborted) {
+        return jsonResponse({ error: BUSY_ERROR }, 503);
+      }
+
       if (attempt < MAX_ATTEMPTS) {
         await delay(RETRY_DELAY_MS);
         continue;
       }
 
-      if (controller.signal.aborted) {
-        return jsonResponse({ error: "The Z.AI API request timed out." }, 504);
-      }
-      return jsonResponse({ error: "Unable to reach the Z.AI API." }, 502);
+      return jsonResponse({ error: BUSY_ERROR }, 503);
     } finally {
       clearTimeout(timeoutId);
     }
@@ -106,8 +109,7 @@ export async function onRequestPost(context) {
       errorCode = undefined;
     }
 
-    const shouldRetry =
-      upstream.status === 429 || String(errorCode ?? "") === "1305";
+    const shouldRetry = String(errorCode ?? "") === "1305";
 
     if (!shouldRetry) {
       return new Response(errorBody, {
@@ -122,11 +124,7 @@ export async function onRequestPost(context) {
       continue;
     }
 
-    return new Response(errorBody, {
-      status: upstream.status,
-      statusText: upstream.statusText,
-      headers: copyCorsHeaders(upstream.headers),
-    });
+    return jsonResponse({ error: BUSY_ERROR }, 503);
   }
 }
 
