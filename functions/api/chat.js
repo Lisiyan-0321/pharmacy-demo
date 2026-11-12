@@ -4,15 +4,8 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
-const REQUEST_TIMEOUT_MS = 45_000;
-const RETRY_DELAY_MS = 1_000;
-const MAX_ATTEMPTS = 2;
 const BUSY_ERROR =
   "The free-tier AI model is currently busy. Please wait a few seconds and try again.";
-
-function delay(milliseconds) {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
-}
 
 function copyCorsHeaders(sourceHeaders) {
   const headers = new Headers(sourceHeaders);
@@ -61,71 +54,26 @@ export async function onRequestPost(context) {
     stream: true,
   });
 
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-    let upstream;
-
-    try {
-      upstream = await fetch(ZAI_API_URL, {
-        method: "POST",
-        headers: {
-          Accept: "text/event-stream",
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: requestBody,
-        signal: controller.signal,
-      });
-    } catch {
-      if (controller.signal.aborted) {
-        return jsonResponse({ error: BUSY_ERROR }, 503);
-      }
-
-      if (attempt < MAX_ATTEMPTS) {
-        await delay(RETRY_DELAY_MS);
-        continue;
-      }
-
-      return jsonResponse({ error: BUSY_ERROR }, 503);
-    } finally {
-      clearTimeout(timeoutId);
-    }
-
-    if (upstream.ok) {
-      return new Response(upstream.body, {
-        status: upstream.status,
-        statusText: upstream.statusText,
-        headers: copyCorsHeaders(upstream.headers),
-      });
-    }
-
-    const errorBody = await upstream.text();
-    let errorCode;
-    try {
-      const parsedError = JSON.parse(errorBody);
-      errorCode = parsedError?.error?.code ?? parsedError?.code;
-    } catch {
-      errorCode = undefined;
-    }
-
-    const shouldRetry = String(errorCode ?? "") === "1305";
-
-    if (!shouldRetry) {
-      return new Response(errorBody, {
-        status: upstream.status,
-        statusText: upstream.statusText,
-        headers: copyCorsHeaders(upstream.headers),
-      });
-    }
-
-    if (attempt < MAX_ATTEMPTS) {
-      await delay(RETRY_DELAY_MS);
-      continue;
-    }
-
+  let upstream;
+  try {
+    upstream = await fetch(ZAI_API_URL, {
+      method: "POST",
+      headers: {
+        Accept: "text/event-stream",
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: requestBody,
+    });
+  } catch {
     return jsonResponse({ error: BUSY_ERROR }, 503);
   }
+
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: copyCorsHeaders(upstream.headers),
+  });
 }
 
 export async function onRequestOptions() {
