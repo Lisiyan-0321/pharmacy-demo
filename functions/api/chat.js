@@ -53,6 +53,7 @@ export async function onRequestPost(context) {
     messages: payload.messages,
     stream: true,
     max_tokens: 500,
+    thinking: { type: "disabled" },
   });
 
   let upstream;
