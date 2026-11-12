@@ -52,6 +52,7 @@ export async function onRequestPost(context) {
     model: String(context.env.ZAI_MODEL ?? "glm-5.3-flash").trim(),
     messages: payload.messages,
     stream: true,
+    max_tokens: 300,
   });
 
   let upstream;
