@@ -63,6 +63,7 @@ export async function onRequestPost(context) {
         Accept: "text/event-stream",
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (compatible; PharmacyFAQBot/1.0)",
       },
       body: requestBody,
     });
